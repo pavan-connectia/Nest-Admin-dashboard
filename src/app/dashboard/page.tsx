@@ -7,8 +7,13 @@ import type { RootState } from "@/store/store"
 import { useRouter } from "next/navigation"
 import Navbar from "@/components/navbar"
 import Card from "@/components/card"
+import { toast } from "sonner";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/store/store";
+import { logoutUser } from "@/store/userSlice";
 
 export default function DashboardPage() {
+  const dispatch = useDispatch<AppDispatch>();
   const { isLoggedIn } = useSelector((state: RootState) => state.user)
   const router = useRouter()
 
@@ -26,8 +31,16 @@ export default function DashboardPage() {
       try {
         const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/properties`)
         setProperties(res.data.data || [])
-      } catch (error) {
-        console.error("Error fetching properties:", error)
+      } catch (error: any) {
+        const message = error.response?.data?.message;
+
+        if (message === "Token expired") {
+          dispatch(logoutUser());
+          toast("Session expired. Please log in again.");
+          return;
+        }
+
+        toast(message || "Update Failed");
       } finally {
         setLoading(false)
       }
@@ -44,7 +57,7 @@ export default function DashboardPage() {
 
       <div className="px-6 py-8">
         <h1 className="text-3xl font-bold mb-6" style={{ color: "#8E744B" }}>
-         Properties
+          Properties
         </h1>
 
         {loading ? (

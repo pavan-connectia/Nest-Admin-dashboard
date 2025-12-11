@@ -7,6 +7,9 @@ import { RootState } from "@/store/store";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Navbar from "@/components/navbar";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/store/store";
+import { logoutUser } from "@/store/userSlice";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -41,6 +44,7 @@ interface PropertyFormState {
 }
 
 export default function CreatePropertyPage() {
+  const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const { token, isLoggedIn } = useSelector((state: RootState) => state.user);
 
@@ -177,7 +181,16 @@ export default function CreatePropertyPage() {
       toast.success("Property created successfully!");
       router.push(`/properties/${res.data.data._id}`);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to create property");
+
+              const message = err.response?.data?.message;
+      
+              if (message === "Token expired") {
+                dispatch(logoutUser());
+                toast("Session expired. Please log in again.");
+                return;
+              }
+      
+              toast(message || "Failed to create property");
     }
   };
 

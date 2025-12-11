@@ -5,6 +5,10 @@ import axios from "axios";
 import { useRouter, useParams } from "next/navigation";
 import Navbar from "@/components/navbar";
 import PropertyDetail from "@/components/property-detail";
+import { toast } from "sonner";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/store/store";
+import { logoutUser } from "@/store/userSlice";
 
 interface Amenity {
   _id: string;
@@ -46,6 +50,7 @@ interface PropertyData {
 }
 
 export default function PropertyDetailPage() {
+   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
@@ -62,8 +67,16 @@ export default function PropertyDetailPage() {
           `${process.env.NEXT_PUBLIC_API_URL}/api/properties/${id}`
         );
         setProperty(res.data.data);
-      } catch (err) {
-        console.error("Error loading property", err);
+      } catch (err: any) {
+        const message = err.response?.data?.message;
+
+        if (message === "Token expired") {
+          dispatch(logoutUser());
+          toast("Session expired. Please log in again.");
+          return;
+        }
+
+        toast(message || "Update Failed");
       } finally {
         setLoading(false);
       }
