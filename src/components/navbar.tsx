@@ -16,8 +16,8 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="w-full px-6 py-4 flex justify-between items-center shadow-md"
-      style={{ backgroundColor: "#1D1E1D" }}
+    <nav className="w-full px-6 py-4 flex justify-between items-center shadow-lg bg-[#1d1d1e]"
+      
     >
       {/* Logo */}
       <Link href="/dashboard" className="text-2xl font-bold" style={{ color: "#8E744B" }}>
