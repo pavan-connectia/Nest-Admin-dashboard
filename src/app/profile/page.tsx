@@ -67,16 +67,16 @@ export default function DashboardPage() {
     return (
         <div>
             <Navbar />
-            <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#1D1E1D] p-4">
+            <div className="flex min-h-screen items-center justify-center bg-linear-to-b from-[#1D1E1D] p-4">
             
-            <div className="w-full max-w-md bg-gradient-to-b from-[#434440] to-[#2a2b2a] p-8 rounded-2xl shadow-2xl border border-[#646460] relative">
+            <div className="w-full max-w-md bg-linear-to-b from-[#434440] to-[#2a2b2a] p-8 rounded-2xl shadow-2xl border border-[#646460] relative">
 
                 {/* Header */}
                 <div className="flex flex-col items-center mb-8">
-                    <h1 className="text-4xl font-bold mb-1 bg-gradient-to-r from-[#8E744B] to-[#AEA99E] bg-clip-text text-transparent">
+                    <h1 className="text-4xl font-bold mb-1 bg-linear-to-b from-[#8E744B] to-[#AEA99E] bg-clip-text text-transparent">
                         NEST
                     </h1>
-                    <div className="h-px w-20 bg-gradient-to-r from-transparent via-[#646460] to-transparent my-2"></div>
+                    <div className="h-px w-20 bg-linear-to-b from-transparent via-[#646460] to-transparent my-2"></div>
                     <h3 className="text-lg font-semibold text-[#AEA99E] tracking-wider">
                         PROFILE SETTINGS
                     </h3>
@@ -122,7 +122,7 @@ export default function DashboardPage() {
                         color: "#FFFFFF",
                     }}
                 >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                    <div className="absolute inset-0 bg-linear-to-b from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                     <span className="relative">
                         {loading ? "Updating..." : "Update Profile"}
                     </span>

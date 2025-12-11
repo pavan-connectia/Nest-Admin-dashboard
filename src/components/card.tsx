@@ -40,7 +40,7 @@ export default function PGCard({
 
     return (
         <div
-            onClick={() => router.push(`/dashboard/${id}`)}
+            onClick={() => router.push(`/properties/${id}`)}
             className="group bg-[#434440] rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer hover:-translate-y-1"
         >
             <div className="relative overflow-hidden h-56 bg-[#2D2D2A]">
@@ -60,7 +60,7 @@ export default function PGCard({
                         {name}
                     </h3>
                     <div className="flex items-center gap-2 text-sm" style={{ color: "#88857E" }}>
-                        <MapPin size={16} className="flex-shrink-0" />
+                        <MapPin size={16} className="shrink-0" />
                         <span className="line-clamp-1">
                             {location.area}, {location.city}
                         </span>

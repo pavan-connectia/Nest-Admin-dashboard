@@ -69,7 +69,7 @@ export default function ImageGallery({ images }: ImageGalleryProps) {
             <button
               key={idx}
               onClick={() => setCurrentIndex(idx)}
-              className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
+              className={`shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
                 idx === currentIndex ? "border-[#8E744B]" : "border-[#434440] hover:border-[#8E744B]"
               }`}
             >

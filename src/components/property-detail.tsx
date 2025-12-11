@@ -60,7 +60,6 @@ export default function PropertyDetail({ property, onBack }: PropertyDetailProps
     const { token, isLoggedIn } = useSelector((state: RootState) => state.user);
     const router = useRouter();
 
-    // Redirect if unauthorized
     if (!isLoggedIn) {
         router.push("/");
         return null;
@@ -68,38 +67,35 @@ export default function PropertyDetail({ property, onBack }: PropertyDetailProps
 
     const handleDelete = async () => {
         try {
-            const res = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/properties/${id}`,
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
-            if (res.data.status === 200) {
-                toast("Property deleted successfully");
-                router.push("/dashboard");
-            }
+            await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/properties/${id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
 
+            toast("Property deleted successfully");
+            router.push("/dashboard");
         } catch (error: any) {
-            toast(error.response?.data?.message || "delete failed")
+            toast(error.response?.data?.message || "delete failed");
         }
-    }
+    };
 
     return (
-        <div className="px-5 py-10 max-w-7xl mx-auto">
+        <div className="px-4 md:px-6 lg:px-10 py-6 md:py-10 max-w-7xl mx-auto">
+
             {/* Back Button */}
             <button
                 onClick={onBack}
-                className="flex items-center gap-2 mb-4 text-[#8E744B]"
+                className="flex items-center gap-2 mb-4 text-[#8E744B] text-sm md:text-base"
             >
                 <ChevronLeft size={20} /> Back
             </button>
 
             {/* Title */}
-            <h1 className="text-4xl font-bold text-[#AEA99E] mb-4">
+            <h1 className="text-2xl md:text-4xl font-bold text-[#AEA99E] mb-3 md:mb-4">
                 {property.name}
             </h1>
 
             {/* Address + Gender */}
-            <div className="flex gap-6 text-[#88857E] mb-4">
+            <div className="flex flex-col md:flex-row gap-2 md:gap-6 text-[#88857E] mb-4 text-sm md:text-base">
                 <div className="flex items-center gap-2">
                     <MapPin size={18} color="#8E744B" /> {property.location.address}
                 </div>
@@ -108,63 +104,72 @@ export default function PropertyDetail({ property, onBack }: PropertyDetailProps
                 </div>
             </div>
 
-            <p className="text-[#AEA99E] mb-6">{property.description}</p>
+            <p className="text-[#AEA99E] mb-6 text-sm md:text-base">{property.description}</p>
 
             {/* IMAGE GALLERY */}
-            <ImageGallery images={property.images} />
+            <div className="mb-8">
+                <ImageGallery images={property.images} />
+            </div>
 
             {/* ROOM TYPES */}
-            <h2 className="text-2xl font-bold text-[#8E744B] mt-10 mb-4">
+            <h2 className="text-xl md:text-2xl font-bold text-[#8E744B] mt-6 md:mt-10 mb-3 md:mb-4">
                 Room Types & Pricing
             </h2>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {property.roomTypes.map((room) => (
                     <div
                         key={room._id}
                         onClick={() => setSelectedRoom(room)}
-                        className="bg-[#434440] p-5 rounded-xl cursor-pointer border border-[#1D1E1D] hover:border-[#8E744B]"
+                        className="bg-[#434440] p-4 md:p-5 rounded-xl cursor-pointer border border-[#1D1E1D] hover:border-[#8E744B] transition-all"
                     >
-                        <h3 className="text-xl text-[#AEA99E] capitalize mb-2">{room.type}</h3>
-                        <p className="text-white text-3xl mb-2">₹{room.pricePerMonth}</p>
-                        <p className="text-[#88857E]">
+                        <h3 className="text-lg md:text-xl text-[#AEA99E] capitalize mb-2">{room.type}</h3>
+                        <p className="text-white text-2xl md:text-3xl mb-1 md:mb-2">₹{room.pricePerMonth}</p>
+                        <p className="text-[#88857E] text-sm md:text-base">
                             Capacity: {room.capacity} person{room.capacity > 1 ? "s" : ""}
                         </p>
-                        <p className="text-[#8E744B] font-semibold mt-2">
+                        <p className="text-[#8E744B] font-semibold mt-2 text-sm md:text-base">
                             {room.availableRooms} rooms left
                         </p>
                     </div>
                 ))}
             </div>
 
-            <h2 className="text-2xl font-bold text-[#8E744B] mt-10 mb-4">Amenities</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {/* Amenities */}
+            <h2 className="text-xl md:text-2xl font-bold text-[#8E744B] mt-8 md:mt-10 mb-4">
+                Amenities
+            </h2>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
                 {property.amenities.map((item) => (
-                    <div key={item._id} className="bg-[#434440] p-4 rounded-lg flex gap-3">
-                        <img src={item.imageUrl} className="w-10 h-10 rounded" />
-                        <span className="text-[#AEA99E]">{item.name}</span>
+                    <div key={item._id} className="bg-[#434440] p-3 md:p-4 rounded-lg flex gap-3 items-center">
+                        <img src={item.imageUrl} className="w-8 h-8 md:w-10 md:h-10 rounded" />
+                        <span className="text-[#AEA99E] text-sm md:text-base">{item.name}</span>
                     </div>
                 ))}
             </div>
 
-            <h2 className="text-2xl font-bold text-[#8E744B] mt-10 mb-4">Services</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {/* Services */}
+            <h2 className="text-xl md:text-2xl font-bold text-[#8E744B] mt-8 md:mt-10 mb-4">
+                Services
+            </h2>
 
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
                 {property.services.map((item) => (
-                    <div key={item._id} className="bg-[#434440] p-4 rounded-lg flex gap-3">
-                        <img src={item.imageUrl} className="w-10 h-10 rounded" />
-                        <span className="text-[#AEA99E]">{item.name}</span>
+                    <div key={item._id} className="bg-[#434440] p-3 md:p-4 rounded-lg flex gap-3 items-center">
+                        <img src={item.imageUrl} className="w-8 h-8 md:w-10 md:h-10 rounded" />
+                        <span className="text-[#AEA99E] text-sm md:text-base">{item.name}</span>
                     </div>
                 ))}
             </div>
 
             {/* MAP SECTION */}
-            <div className="mb-8">
-                <h2 className="text-2xl font-bold mb-4" style={{ color: "#8E744B" }}>
+            <div className="mb-10 mt-8">
+                <h2 className="text-xl md:text-2xl font-bold mb-4" style={{ color: "#8E744B" }}>
                     Location Map
                 </h2>
 
-                <div className="w-full h-96 rounded-xl overflow-hidden">
+                <div className="w-full h-64 sm:h-80 md:h-96 rounded-xl overflow-hidden">
                     <iframe
                         width="100%"
                         height="100%"
@@ -176,9 +181,23 @@ export default function PropertyDetail({ property, onBack }: PropertyDetailProps
                 </div>
             </div>
 
-            <div className="felx justify-between flex-row">
-                <div><button>Delete</button></div>
-                <div onClick={() => router.push(`/property/${id}`)}><button>Update</button></div>
+            {/* ACTION BUTTONS */}
+            <div className="flex flex-col sm:flex-row justify-between gap-4 mt-6 md:mt-10">
+
+                <button
+                    onClick={handleDelete}
+                    className="w-full sm:w-auto px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-md transition-all text-center"
+                >
+                    Delete Property
+                </button>
+
+                <button
+                    onClick={() => router.push(`/properties/update/${id}`)}
+                    className="w-full sm:w-auto px-6 py-3 bg-[#8E744B] hover:bg-[#7a653f] text-white font-semibold rounded-lg shadow-md transition-all flex items-center justify-center gap-2"
+                >
+                    Update Property <ArrowRight size={18} />
+                </button>
+
             </div>
 
         </div>
