@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { ChevronLeft, MapPin, Users, ArrowRight } from "lucide-react";
 import ImageGallery from "./image-gallery";
+import { useParams, useRouter } from "next/navigation";
+import { toast } from "sonner";
+import axios from "axios";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store/store";
 
 interface Amenity {
     _id: string;
@@ -50,6 +55,33 @@ interface PropertyDetailProps {
 
 export default function PropertyDetail({ property, onBack }: PropertyDetailProps) {
     const [selectedRoom, setSelectedRoom] = useState<RoomType | null>(null);
+    const params = useParams();
+    const id = params.id as string;
+    const { token, isLoggedIn } = useSelector((state: RootState) => state.user);
+    const router = useRouter();
+
+    // Redirect if unauthorized
+    if (!isLoggedIn) {
+        router.push("/");
+        return null;
+    }
+
+    const handleDelete = async () => {
+        try {
+            const res = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/properties/${id}`,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+            if (res.data.status === 200) {
+                toast("Property deleted successfully");
+                router.push("/dashboard");
+            }
+
+        } catch (error: any) {
+            toast(error.response?.data?.message || "delete failed")
+        }
+    }
 
     return (
         <div className="px-5 py-10 max-w-7xl mx-auto">
@@ -127,22 +159,27 @@ export default function PropertyDetail({ property, onBack }: PropertyDetailProps
             </div>
 
             {/* MAP SECTION */}
-<div className="mb-8">
-  <h2 className="text-2xl font-bold mb-4" style={{ color: "#8E744B" }}>
-    Location Map
-  </h2>
+            <div className="mb-8">
+                <h2 className="text-2xl font-bold mb-4" style={{ color: "#8E744B" }}>
+                    Location Map
+                </h2>
 
-  <div className="w-full h-96 rounded-xl overflow-hidden">
-    <iframe
-      width="100%"
-      height="100%"
-      style={{ border: 0 }}
-      loading="lazy"
-      allowFullScreen
-      src={`https://www.google.com/maps?q=${property.location.latitude},${property.location.longitude}&hl=es;z=14&output=embed`}
-    ></iframe>
-  </div>
-</div>
+                <div className="w-full h-96 rounded-xl overflow-hidden">
+                    <iframe
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        loading="lazy"
+                        allowFullScreen
+                        src={`https://www.google.com/maps?q=${property.location.latitude},${property.location.longitude}&hl=es;z=14&output=embed`}
+                    ></iframe>
+                </div>
+            </div>
+
+            <div className="felx justify-between flex-row">
+                <div><button>Delete</button></div>
+                <div onClick={() => router.push(`/property/${id}`)}><button>Update</button></div>
+            </div>
 
         </div>
     );

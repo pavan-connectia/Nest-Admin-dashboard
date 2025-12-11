@@ -24,7 +24,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/poperties`)
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/poperties`)
         setProperties(res.data.data || [])
       } catch (error) {
         console.error("Error fetching properties:", error)

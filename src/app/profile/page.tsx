@@ -40,7 +40,7 @@ export default function DashboardPage() {
             setLoading(true);
 
             const res = await axios.put(
-                `${process.env.NEXT_PUBLIC_API_URL}/users/update`,
+                `${process.env.NEXT_PUBLIC_API_URL}/api/users/update`,
                 {
                     name: form.name,
                     email: form.email,

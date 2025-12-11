@@ -45,7 +45,7 @@ export default function PGCard({
         >
             <div className="relative overflow-hidden h-56 bg-[#2D2D2A]">
                 <img
-                    src={images?.[0] || "/placeholder.svg"}
+                    src={`${process.env.NEXT_PUBLIC_API_URL}${images?.[0] || "/placeholder.svg"}`}
                     alt={name}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                 />

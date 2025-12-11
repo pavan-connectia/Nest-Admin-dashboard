@@ -59,7 +59,7 @@ export default function PropertyDetailPage() {
     const fetchProperty = async () => {
       try {
         const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/poperties/${id}`
+          `${process.env.NEXT_PUBLIC_API_URL}/api/poperties/${id}`
         );
         setProperty(res.data.data);
       } catch (err) {

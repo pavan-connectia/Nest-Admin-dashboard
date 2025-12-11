@@ -3,20 +3,15 @@
 import { useEffect, useState, ChangeEvent } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
-import type { RootState } from "@/store/store";
+import { RootState } from "@/store/store";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Navbar from "@/components/navbar";
 
-interface Amenity {
-  _id: string;
-  name: string;
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-interface Service {
-  _id: string;
-  name: string;
-}
+interface Amenity { _id: string; name: string }
+interface Service { _id: string; name: string }
 
 interface RoomType {
   type: string;
@@ -25,7 +20,7 @@ interface RoomType {
   availableRooms: string;
 }
 
-interface Location {
+interface LocationState {
   city: string;
   area: string;
   address: string;
@@ -38,12 +33,10 @@ interface PropertyFormState {
   description: string;
   gender: string;
   propertyType: string;
-  location: Location;
+  location: LocationState;
   roomTypes: RoomType[];
   amenities: string[];
   services: string[];
-  images: string;
-  videos: string;
   status: string;
 }
 
@@ -51,15 +44,11 @@ export default function CreatePropertyPage() {
   const router = useRouter();
   const { token, isLoggedIn } = useSelector((state: RootState) => state.user);
 
-  // Redirect if unauthorized
-  if (!isLoggedIn) {
-    router.push("/");
-    return null;
-  }
-
-
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [services, setServices] = useState<Service[]>([]);
+
+  const [images, setImages] = useState<File[]>([]);
+  const [videos, setVideos] = useState<File[]>([]);
 
   const [form, setForm] = useState<PropertyFormState>({
     name: "",
@@ -78,37 +67,42 @@ export default function CreatePropertyPage() {
     ],
     amenities: [],
     services: [],
-    images: "",
-    videos: "",
     status: "available",
   });
 
+  // Redirect if not logged in
   useEffect(() => {
-    const fetchData = async () => {
+    if (!isLoggedIn) router.push("/");
+  }, [isLoggedIn]);
+
+  // Fetch amenities & services
+  useEffect(() => {
+    (async () => {
       try {
-        const [amenityResponse, serviceResponse] = await Promise.all([
-          axios.get("http://localhost:5000/api/amenities/"),
-          axios.get("http://localhost:5000/api/services/"),
+        const [amenityRes, serviceRes] = await Promise.all([
+          axios.get(`${API_URL}/api/amenities`),
+          axios.get(`${API_URL}/api/services`),
         ]);
 
-        setAmenities(amenityResponse.data.data || []);
-        setServices(serviceResponse.data.data || []);
+        setAmenities(amenityRes.data.data || []);
+        setServices(serviceRes.data.data || []);
       } catch {
-        toast.error("Failed to load amenities & services.");
+        toast.error("Failed to load amenities/services.");
       }
-    };
-
-    fetchData();
+    })();
   }, []);
 
-  const handleInput = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  // Input handler
+  const handleInput = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
 
     if (name.startsWith("location.")) {
-      const field = name.split(".")[1];
+      const key = name.split(".")[1];
       setForm((prev) => ({
         ...prev,
-        location: { ...prev.location, [field]: value },
+        location: { ...prev.location, [key]: value },
       }));
       return;
     }
@@ -116,11 +110,13 @@ export default function CreatePropertyPage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleRoomChange = (index: number, field: keyof RoomType, value: string) => {
-    const updatedRooms = [...form.roomTypes];
-    updatedRooms[index][field] = value;
-
-    setForm((prev) => ({ ...prev, roomTypes: updatedRooms }));
+  // Room updates
+  const updateRoom = (index: number, field: keyof RoomType, value: string) => {
+    setForm((prev) => {
+      const updated = [...prev.roomTypes];
+      updated[index][field] = value;
+      return { ...prev, roomTypes: updated };
+    });
   };
 
   const addRoomType = () => {
@@ -133,208 +129,198 @@ export default function CreatePropertyPage() {
     }));
   };
 
-  const removeRoomType = (index: number) => {
+  const removeRoomType = (i: number) => {
     setForm((prev) => ({
       ...prev,
-      roomTypes: prev.roomTypes.filter((_, i) => i !== index),
+      roomTypes: prev.roomTypes.filter((_, idx) => idx !== i),
     }));
   };
 
+  // File handlers
+  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => { if (e.target.files) { setImages([...images, ...Array.from(e.target.files)]); } };
+
+  const handleVideoUpload = (e: ChangeEvent<HTMLInputElement>) => { if (e.target.files) { setVideos([...videos, ...Array.from(e.target.files)]); } };
+
+  // Submit form
   const createProperty = async () => {
     try {
-      const payload = {
-        ...form,
-        roomTypes: form.roomTypes.map((room) => ({
-          ...room,
-          pricePerMonth: Number(room.pricePerMonth),
-          capacity: Number(room.capacity),
-          availableRooms: Number(room.availableRooms),
-        })),
-        images: form.images.split(",").map((img) => img.trim()),
-        videos: form.videos.split(",").map((vid) => vid.trim()),
-      };
+      const fd = new FormData();
 
-      const response = await axios.post(
-        "http://localhost:5000/api/poperties",
-        payload,
-        {
-          headers: { Authorization: `Bearer ${token}` },
+      Object.entries(form).forEach(([key, val]) => {
+        if (key === "location") {
+          Object.entries(val).forEach(([locKey, locVal]) => {
+            fd.append(`location[${locKey}]`, locVal as string);
+          });
+        } else if (key === "roomTypes") {
+          form.roomTypes.forEach((room, i) => {
+            Object.entries(room).forEach(([k, v]) => {
+              fd.append(`roomTypes[${i}][${k}]`, v);
+            });
+          });
+        } else if (key === "amenities" || key === "services") {
+          (val as string[]).forEach((id) => fd.append(key, id));
+        } else {
+          fd.append(key, val as string);
         }
-      );
+      });
+
+      images.forEach((img) => fd.append("images", img));
+      videos.forEach((vid) => fd.append("videos", vid));
+
+      const res = await axios.post(`${API_URL}/api/poperties`, fd, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       toast.success("Property created successfully!");
-      router.push(`/dashboard/${response.data?.data?._id}`);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to create property.");
+      router.push(`/dashboard/${res.data.data._id}`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to create property");
     }
   };
 
   return (
-    <div className="bg-[#1D1D1E]">
+    <div className="bg-[#1D1D1E] min-h-screen">
       <Navbar />
-      <div className="min-h-screen  text-white flex justify-center p-6">
-        <div className="w-full max-w-5xl bg-gradient-to-b from-[#434440] to-[#2a2b2a] p-8 rounded-2xl border border-[#646460] shadow-lg">
 
-          <h1 className="text-4xl font-bold text-center bg-gradient-to-r from-[#8E744B] to-[#AEA99E] bg-clip-text text-transparent mb-8">
-            Create New Property
+      <div className="flex justify-center p-6">
+        <div className="w-full max-w-5xl bg-gradient-to-b from-[#434440] to-[#2a2b2a] p-8 rounded-2xl shadow-xl border border-[#646460]">
+
+          <h1 className="text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-[#8E744B] to-[#AEA99E] mb-10">
+            Create Property
           </h1>
 
-          <div className="space-y-6">
+          {/* NAME */}
+          <input className="input" placeholder="Property Name" name="name" onChange={handleInput} />
 
-            <input
-              name="name"
-              placeholder="Property Name"
-              onChange={handleInput}
-              className="input"
-            />
+          {/* DESCRIPTION */}
+          <textarea className="input h-28 mt-4" placeholder="Description" name="description" onChange={handleInput} />
 
-            <textarea
-              name="description"
-              placeholder="Description"
-              onChange={handleInput}
-              className="input h-28"
-            />
+          {/* GENDER & TYPE */}
+          <div className="grid grid-cols-2 gap-4 mt-6">
+            <select className="input" name="gender" onChange={handleInput}>
+              <option value="boys">Boys</option>
+              <option value="girls">Girls</option>
+              <option value="co-ed">Co-Ed</option>
+            </select>
 
-            <div className="grid grid-cols-2 gap-4">
-              <select name="gender" onChange={handleInput} className="input">
-                <option value="boys">Boys</option>
-                <option value="girls">Girls</option>
-                <option value="co-ed">Co-Ed</option>
-              </select>
-
-              <select name="propertyType" onChange={handleInput} className="input">
-                <option value="pg">PG</option>
-              </select>
-            </div>
-
-            <h3 className="section-title">Location</h3>
-
-            <input name="location.city" placeholder="City" onChange={handleInput} className="input" />
-            <input name="location.area" placeholder="Area" onChange={handleInput} className="input" />
-            <input name="location.address" placeholder="Address" onChange={handleInput} className="input" />
-
-            <div className="grid grid-cols-2 gap-4">
-              <input name="location.latitude" placeholder="Latitude" onChange={handleInput} className="input" />
-              <input name="location.longitude" placeholder="Longitude" onChange={handleInput} className="input" />
-            </div>
-
-            <h3 className="section-title">Room Types</h3>
-
-            {form.roomTypes.map((room, index) => (
-              <div key={index} className="room-box">
-
-                <div className="grid grid-cols-4 gap-3">
-                  <input
-                    placeholder="Type"
-                    value={room.type}
-                    onChange={(e) => handleRoomChange(index, "type", e.target.value)}
-                    className="input"
-                  />
-
-                  <input
-                    placeholder="Price"
-                    value={room.pricePerMonth}
-                    onChange={(e) => handleRoomChange(index, "pricePerMonth", e.target.value)}
-                    className="input"
-                  />
-
-                  <input
-                    placeholder="Capacity"
-                    value={room.capacity}
-                    onChange={(e) => handleRoomChange(index, "capacity", e.target.value)}
-                    className="input"
-                  />
-
-                  <input
-                    placeholder="Available"
-                    value={room.availableRooms}
-                    onChange={(e) => handleRoomChange(index, "availableRooms", e.target.value)}
-                    className="input"
-                  />
-                </div>
-
-                {form.roomTypes.length > 1 && (
-                  <button
-                    onClick={() => removeRoomType(index)}
-                    className="remove-btn"
-                  >
-                    Remove Room Type
-                  </button>
-                )}
-              </div>
-            ))}
-
-            <button onClick={addRoomType} className="add-btn">
-              + Add Room Type
-            </button>
-
-            <h3 className="section-title">Amenities</h3>
-
-            <div className="grid grid-cols-2 gap-3">
-              {amenities.map((item) => (
-                <label key={item._id} className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    onChange={(e) => {
-                      const checked = e.target.checked;
-                      setForm((prev) => ({
-                        ...prev,
-                        amenities: checked
-                          ? [...prev.amenities, item._id]
-                          : prev.amenities.filter((id) => id !== item._id),
-                      }));
-                    }}
-                  />
-                  {item.name}
-                </label>
-              ))}
-            </div>
-
-            <h3 className="section-title">Services</h3>
-
-            <div className="grid grid-cols-2 gap-3">
-              {services.map((item) => (
-                <label key={item._id} className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    onChange={(e) => {
-                      const checked = e.target.checked;
-                      setForm((prev) => ({
-                        ...prev,
-                        services: checked
-                          ? [...prev.services, item._id]
-                          : prev.services.filter((id) => id !== item._id),
-                      }));
-                    }}
-                  />
-                  {item.name}
-                </label>
-              ))}
-            </div>
-
-
-            <input
-              name="images"
-              placeholder="Image URLs, separated by commas"
-              onChange={handleInput}
-              className="input"
-            />
-
-            <input
-              name="videos"
-              placeholder="Video URLs, separated by commas"
-              onChange={handleInput}
-              className="input"
-            />
-
-            <button
-              onClick={createProperty}
-              className="submit-btn"
-            >
-              Create Property
-            </button>
-
+            <select className="input" name="propertyType" onChange={handleInput}>
+              <option value="pg">PG</option>
+            </select>
           </div>
+
+          {/* LOCATION */}
+          <h3 className="section-title mt-10">Location</h3>
+          {["city", "area", "address"].map((field) => (
+            <input key={field} className="input my-2" name={`location.${field}`} placeholder={field} onChange={handleInput} />
+          ))}
+
+          <div className="grid grid-cols-2 gap-4">
+            <input className="input" name="location.latitude" placeholder="Latitude" onChange={handleInput} />
+            <input className="input" name="location.longitude" placeholder="Longitude" onChange={handleInput} />
+          </div>
+
+          {/* ROOMS */}
+          <h3 className="section-title mt-10">Room Types</h3>
+
+          {form.roomTypes.map((room, i) => (
+            <div key={i} className="room-box">
+              <div className="grid grid-cols-4 gap-3 mb-2">
+                {["type", "pricePerMonth", "capacity", "availableRooms"].map((field) => (
+                  <input
+                    key={field}
+                    className="input"
+                    placeholder={field}
+                    value={room[field as keyof RoomType]}
+                    onChange={(e) => updateRoom(i, field as keyof RoomType, e.target.value)}
+                  />
+                ))}
+              </div>
+
+              {form.roomTypes.length > 1 && (
+                <button className="remove-btn" onClick={() => removeRoomType(i)}>
+                  Remove Room Type
+                </button>
+              )}
+            </div>
+          ))}
+
+          <button className="add-btn mt-3" onClick={addRoomType}>
+            + Add Room Type
+          </button>
+
+          {/* AMENITIES */}
+          <h3 className="section-title mt-10">Amenities</h3>
+          <div className="grid grid-cols-2 gap-3">
+            {amenities.map((a) => (
+              <label key={a._id} className="checkbox-label">
+                <input
+                  type="checkbox"
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      amenities: e.target.checked
+                        ? [...prev.amenities, a._id]
+                        : prev.amenities.filter((id) => id !== a._id),
+                    }))
+                  }
+                />
+                {a.name}
+              </label>
+            ))}
+          </div>
+
+          {/* SERVICES */}
+          <h3 className="section-title mt-10">Services</h3>
+          <div className="grid grid-cols-2 gap-3">
+            {services.map((s) => (
+              <label key={s._id} className="checkbox-label">
+                <input
+                  type="checkbox"
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      services: e.target.checked
+                        ? [...prev.services, s._id]
+                        : prev.services.filter((id) => id !== s._id),
+                    }))
+                  }
+                />
+                {s.name}
+              </label>
+            ))}
+          </div>
+
+          {/* IMAGES */}
+          <h3 className="section-title mt-10">Upload Images</h3>
+          <input type="file" multiple accept="image/*" className="input" onChange={handleImageUpload} />
+
+          {images.length > 0 && (
+            <div className="grid grid-cols-4 gap-4 mt-4">
+              {images.map((img, i) => (
+                <img key={i} src={URL.createObjectURL(img)} className="w-full h-28 rounded-xl object-cover" />
+              ))}
+            </div>
+          )}
+
+          {/* VIDEOS */}
+          <h3 className="section-title mt-10">Upload Videos</h3>
+          <input type="file" multiple accept="video/*" className="input" onChange={handleVideoUpload} />
+
+          {videos.length > 0 && (
+            <div className="grid grid-cols-4 gap-4 mt-4">
+              {videos.map((vid, i) => (
+                <video key={i} controls src={URL.createObjectURL(vid)} className="w-full h-28 rounded-xl" />
+              ))}
+            </div>
+          )}
+
+          {/* SUBMIT */}
+          <button className="submit-btn w-full mt-10" onClick={createProperty}>
+            Create Property
+          </button>
         </div>
       </div>
     </div>
