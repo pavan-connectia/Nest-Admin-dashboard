@@ -15,6 +15,14 @@ interface Amenity {
     imageUrl: string;
 }
 
+interface Food {
+    _id: string;
+    breakfast: string;
+    day: string;
+    dinner: string;
+    lunch: string;
+}
+
 interface Service {
     _id: string;
     name: string;
@@ -46,6 +54,7 @@ interface PropertyDetailProps {
         roomTypes: RoomType[];
         amenities: Amenity[];
         services: Service[];
+        foodMenu: Food[];
         images: string[];
         videos: string[];
         status: string;
@@ -162,6 +171,37 @@ export default function PropertyDetail({ property, onBack }: PropertyDetailProps
                     </div>
                 ))}
             </div>
+
+            {/* FOOD MENU */}
+            <h2 className="text-xl md:text-2xl font-bold text-[#8E744B] mt-8 md:mt-10 mb-4">
+                Weekly Food Menu
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {property.foodMenu?.map((item) => (
+                    <div
+                        key={item._id}
+                        className="bg-[#434440] p-4 rounded-xl border border-[#1D1E1D]"
+                    >
+                        <h3 className="text-lg md:text-xl font-semibold text-[#8E744B] mb-2">
+                            {item.day}
+                        </h3>
+
+                        <p className="text-[#AEA99E] text-sm md:text-base mb-1">
+                            <span className="font-semibold text-white">Breakfast:</span> {item.breakfast}
+                        </p>
+
+                        <p className="text-[#AEA99E] text-sm md:text-base mb-1">
+                            <span className="font-semibold text-white">Lunch:</span> {item.lunch}
+                        </p>
+
+                        <p className="text-[#AEA99E] text-sm md:text-base">
+                            <span className="font-semibold text-white">Dinner:</span> {item.dinner}
+                        </p>
+                    </div>
+                ))}
+            </div>
+
 
             {/* MAP SECTION */}
             <div className="mb-10 mt-8">

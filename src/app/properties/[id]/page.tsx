@@ -22,6 +22,14 @@ interface Service {
   imageUrl: string;
 }
 
+interface Food {
+    _id: string;
+    breakfast: string;
+    day: string;
+    dinner: string;
+    lunch: string;
+}
+
 interface PropertyData {
   _id: string;
   name: string;
@@ -45,6 +53,7 @@ interface PropertyData {
   amenities: Amenity[];
   services: Service[];
   images: string[];
+  foodMenu: Food[];
   videos: string[];
   status: string;
 }
@@ -84,6 +93,8 @@ export default function PropertyDetailPage() {
 
     fetchProperty();
   }, [id]);
+
+  console.log(property)
 
   if (loading)
     return (

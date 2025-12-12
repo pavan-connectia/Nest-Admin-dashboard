@@ -23,6 +23,13 @@ interface RoomType {
   availableRooms: string;
 }
 
+interface FoodMenuDay {
+  day: string;
+  breakfast: string;
+  lunch: string;
+  dinner: string;
+}
+
 interface LocationState {
   city: string;
   area: string;
@@ -38,6 +45,7 @@ interface PropertyFormState {
   propertyType: string;
   location: LocationState;
   roomTypes: RoomType[];
+  foodMenu: FoodMenuDay[];
   amenities: string[];
   services: string[];
   status: string;
@@ -53,6 +61,17 @@ export default function CreatePropertyPage() {
 
   const [images, setImages] = useState<File[]>([]);
   const [videos, setVideos] = useState<File[]>([]);
+  const [showFoodMenu, setShowFoodMenu] = useState(false);
+
+  const weekDays = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ];
 
   const [form, setForm] = useState<PropertyFormState>({
     name: "",
@@ -69,6 +88,12 @@ export default function CreatePropertyPage() {
     roomTypes: [
       { type: "single", pricePerMonth: "", capacity: "", availableRooms: "" },
     ],
+    foodMenu: weekDays.map(day => ({
+      day,
+      breakfast: "",
+      lunch: "",
+      dinner: ""
+    })),
     amenities: [],
     services: [],
     status: "available",
@@ -123,6 +148,15 @@ export default function CreatePropertyPage() {
     });
   };
 
+  // Food menu updates
+  const updateFoodMenu = (index: number, field: keyof FoodMenuDay, value: string) => {
+    setForm((prev) => {
+      const updated = [...prev.foodMenu];
+      updated[index][field] = value;
+      return { ...prev, foodMenu: updated };
+    });
+  };
+
   const addRoomType = () => {
     setForm((prev) => ({
       ...prev,
@@ -141,33 +175,57 @@ export default function CreatePropertyPage() {
   };
 
   // File handlers
-  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => { if (e.target.files) { setImages([...images, ...Array.from(e.target.files)]); } };
+  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => { 
+    if (e.target.files) { 
+      setImages([...images, ...Array.from(e.target.files)]); 
+    } 
+  };
 
-  const handleVideoUpload = (e: ChangeEvent<HTMLInputElement>) => { if (e.target.files) { setVideos([...videos, ...Array.from(e.target.files)]); } };
+  const handleVideoUpload = (e: ChangeEvent<HTMLInputElement>) => { 
+    if (e.target.files) { 
+      setVideos([...videos, ...Array.from(e.target.files)]); 
+    } 
+  };
 
   // Submit form
   const createProperty = async () => {
     try {
       const fd = new FormData();
 
-      Object.entries(form).forEach(([key, val]) => {
-        if (key === "location") {
-          Object.entries(val).forEach(([locKey, locVal]) => {
-            fd.append(`location[${locKey}]`, locVal as string);
-          });
-        } else if (key === "roomTypes") {
-          form.roomTypes.forEach((room, i) => {
-            Object.entries(room).forEach(([k, v]) => {
-              fd.append(`roomTypes[${i}][${k}]`, v);
-            });
-          });
-        } else if (key === "amenities" || key === "services") {
-          (val as string[]).forEach((id) => fd.append(key, id));
-        } else {
-          fd.append(key, val as string);
-        }
+      // Basic fields
+      fd.append("name", form.name);
+      fd.append("description", form.description);
+      fd.append("gender", form.gender);
+      fd.append("propertyType", form.propertyType);
+      fd.append("status", form.status);
+
+      // Location
+      Object.entries(form.location).forEach(([key, value]) => {
+        fd.append(`location[${key}]`, value);
       });
 
+      // Room Types
+      form.roomTypes.forEach((room, i) => {
+        Object.entries(room).forEach(([k, v]) => {
+          fd.append(`roomTypes[${i}][${k}]`, v);
+        });
+      });
+
+      // Food Menu (only if user wants to add it)
+      if (showFoodMenu) {
+        form.foodMenu.forEach((menu, i) => {
+          fd.append(`foodMenu[${i}][day]`, menu.day);
+          fd.append(`foodMenu[${i}][breakfast]`, menu.breakfast);
+          fd.append(`foodMenu[${i}][lunch]`, menu.lunch);
+          fd.append(`foodMenu[${i}][dinner]`, menu.dinner);
+        });
+      }
+
+      // Amenities & Services
+      form.amenities.forEach((id) => fd.append("amenities", id));
+      form.services.forEach((id) => fd.append("services", id));
+
+      // Media files
       images.forEach((img) => fd.append("images", img));
       videos.forEach((vid) => fd.append("videos", vid));
 
@@ -181,7 +239,6 @@ export default function CreatePropertyPage() {
       toast.success("Property created successfully!");
       router.push(`/properties/${res.data.data._id}`);
     } catch (err: any) {
-
       const message = err.response?.data?.message;
 
       if (message === "Token expired") {
@@ -221,6 +278,9 @@ export default function CreatePropertyPage() {
 
             <select className="input w-full" name="propertyType" onChange={handleInput}>
               <option value="pg">PG</option>
+              <option value="hostel">Hostel</option>
+              <option value="apartment">Apartment</option>
+              <option value="studio">Studio</option>
             </select>
           </div>
 
@@ -271,6 +331,71 @@ export default function CreatePropertyPage() {
             + Add Room Type
           </button>
 
+          {/* FOOD MENU */}
+          <div className="mt-10">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="section-title">Weekly Food Menu</h3>
+              <button 
+                type="button"
+                onClick={() => setShowFoodMenu(!showFoodMenu)}
+                className="px-4 py-2 bg-[#646460] text-white rounded-lg hover:bg-[#7c7c77] transition"
+              >
+                {showFoodMenu ? "Hide Menu" : "Add Food Menu"}
+              </button>
+            </div>
+
+            {showFoodMenu && (
+              <div className="bg-[#2a2b2a] p-4 rounded-lg border border-[#646460]">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-[#646460]">
+                        <th className="py-2 px-3 text-left text-[#AEA99E]">Day</th>
+                        <th className="py-2 px-3 text-left text-[#AEA99E]">Breakfast</th>
+                        <th className="py-2 px-3 text-left text-[#AEA99E]">Lunch</th>
+                        <th className="py-2 px-3 text-left text-[#AEA99E]">Dinner</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {form.foodMenu.map((day, i) => (
+                        <tr key={day.day} className="border-b border-[#3d3e3d]">
+                          <td className="py-3 px-3 text-white font-medium">{day.day}</td>
+                          <td className="py-2 px-3">
+                            <input
+                              type="text"
+                              className="input w-full text-sm"
+                              placeholder="Breakfast"
+                              value={day.breakfast}
+                              onChange={(e) => updateFoodMenu(i, 'breakfast', e.target.value)}
+                            />
+                          </td>
+                          <td className="py-2 px-3">
+                            <input
+                              type="text"
+                              className="input w-full text-sm"
+                              placeholder="Lunch"
+                              value={day.lunch}
+                              onChange={(e) => updateFoodMenu(i, 'lunch', e.target.value)}
+                            />
+                          </td>
+                          <td className="py-2 px-3">
+                            <input
+                              type="text"
+                              className="input w-full text-sm"
+                              placeholder="Dinner"
+                              value={day.dinner}
+                              onChange={(e) => updateFoodMenu(i, 'dinner', e.target.value)}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* AMENITIES */}
           <h3 className="section-title mt-10">Amenities</h3>
 
@@ -288,7 +413,7 @@ export default function CreatePropertyPage() {
                     }))
                   }
                 />
-                <span className="text-sm sm:text-base">{a.name}</span>
+                <span className="text-sm sm:text-base text-white">{a.name}</span>
               </label>
             ))}
           </div>
@@ -310,7 +435,7 @@ export default function CreatePropertyPage() {
                     }))
                   }
                 />
-                <span className="text-sm sm:text-base">{s.name}</span>
+                <span className="text-sm sm:text-base text-white">{s.name}</span>
               </label>
             ))}
           </div>
@@ -326,6 +451,7 @@ export default function CreatePropertyPage() {
                   key={i}
                   src={URL.createObjectURL(img)}
                   className="w-full h-24 sm:h-28 rounded-xl object-cover"
+                  alt={`Upload ${i}`}
                 />
               ))}
             </div>
@@ -356,5 +482,4 @@ export default function CreatePropertyPage() {
       </div>
     </div>
   );
-
 }
