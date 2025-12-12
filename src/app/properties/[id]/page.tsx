@@ -50,7 +50,7 @@ interface PropertyData {
 }
 
 export default function PropertyDetailPage() {
-   const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
@@ -76,7 +76,7 @@ export default function PropertyDetailPage() {
           return;
         }
 
-        toast(message || "Update Failed");
+        toast(message || "Failed Fetch");
       } finally {
         setLoading(false);
       }

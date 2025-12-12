@@ -7,6 +7,9 @@ import { toast } from "sonner";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store/store";
 import Navbar from "@/components/navbar";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/store/store";
+import { logoutUser } from "@/store/userSlice";
 
 interface RoomType {
     type: string;
@@ -28,6 +31,7 @@ interface Service {
 }
 
 export default function UpdatePropertyPage() {
+    const dispatch = useDispatch<AppDispatch>();
     const params = useParams();
     const id = params.id as string;
 
@@ -195,8 +199,15 @@ export default function UpdatePropertyPage() {
             toast.success("Property Updated Successfully!");
             router.push(`/properties/${id}`);
         } catch (err: any) {
-            console.error("Update error:", err);
-            toast.error(err.response?.data?.message || "Update failed");
+            const message = err.response?.data?.message;
+
+            if (message === "Token expired") {
+                dispatch(logoutUser());
+                toast("Session expired. Please log in again.");
+                return;
+            }
+
+            toast(message || "Update Failed");
         }
     };
 
