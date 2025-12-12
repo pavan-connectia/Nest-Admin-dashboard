@@ -20,12 +20,11 @@ export default function DashboardPage() {
   const [properties, setProperties] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Redirect if not logged in
   useEffect(() => {
     if (!isLoggedIn) router.push("/")
   }, [isLoggedIn])
 
-  // Fetch PG properties
+
   useEffect(() => {
     const fetchProperties = async () => {
       try {

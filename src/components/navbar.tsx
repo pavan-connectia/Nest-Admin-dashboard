@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { logoutUser } from "@/store/userSlice";
 import type { AppDispatch, RootState } from "@/store/store";
 import { useState } from "react";
-import { Menu, X, User, Home, PlusCircle, LogOut } from "lucide-react";
+import { Menu, X, User, Home, PlusCircle, LogOut,Contact } from "lucide-react";
 
 export default function Navbar() {
   const router = useRouter();
@@ -35,6 +35,12 @@ export default function Navbar() {
       href: "/properties/create",
       icon: <PlusCircle className="w-5 h-5" />,
       active: pathname === "/properties/create",
+    },
+    {
+      name: "Contacts",
+      href: "/dashboard/contacts",
+      icon: <Contact className="w-5 h-5" />,
+      active: pathname === "/dashboard/contacts",
     },
     {
       name: "Profile",
