@@ -62,7 +62,7 @@ export default function DashboardPage() {
         {loading ? (
           <p className="text-[#AEA99E] text-lg">Loading properties...</p>
         ) : properties.length === 0 ? (
-          <p className="text-[#AEA99E] text-lg">No properties found.</p>
+          <p className="text-[#AEA99E] text-lg">No properties found...</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {properties.map((pg) => (
